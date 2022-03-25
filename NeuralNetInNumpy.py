@@ -59,6 +59,29 @@ class dense_layer():
     dL_dinput = np.transpose(self.weights).dot(upstream_gradient)  # sensitivity of loss function to feature vector of the layer 
     return dL_dinput
 
+class relu_layer():
+  def __init__(self):
+    pass
+
+  def forward_pass(self, feature_vector):
+    self.relu = relu(feature_vector)  # save for backward pass
+    return self.relu
+
+  
+  def backward_pass(self, upstream_gradient, learning_rate): 
+    '''learning rate not needed but is passed because parameter update is embedded in backward pass of other layers.
+    Indicates the need to refactor the code!'''
+    local_gradient = np.where(self.relu < 0, 0, 1)
+    print("self.relu in backward_pass. upstream gradient: \n {} \n local_gradient:\n {}".format(upstream_gradient, local_gradient))
+    dL_dinput = np.array(upstream_gradient) * np.array(local_gradient)  # elementwise multiply
+    return dL_dinput
+
+def relu(x):
+    ''' relu: relu function'''
+    return np.where(x < 0, 0, x)
+
+
+
 class sigmoid_layer():
   def __init__(self):
     pass
@@ -73,7 +96,7 @@ class sigmoid_layer():
     Indicates the need to refactor the code!'''
     local_gradient = (1 - self.sigmoid)/self.sigmoid
     print("self.sigmoid in backward_pass. upstream gradient: \n {} \n local_gradient:\n {}".format(upstream_gradient, local_gradient))
-    dL_dinput = np.array(upstream_gradient) * np.array(local_gradient)  
+    dL_dinput = np.array(upstream_gradient) * np.array(local_gradient)  # elementwise multiply
     return dL_dinput
 
 def sigmoid(x):
@@ -93,6 +116,13 @@ def mse_gradient(y, y_hat):
   '''gradient of mse: mean squared error loss: (y_hat - y). y_hat is the estimate from the network, y is the ground truth'''
   return y_hat - y
 
+def binary_cross_entropy(y, y_hat): 
+  '''binary cross entropy: y*np.log2(y_hat) + (1-y)*np.log2(1-y_hat) y_hat is the estimate from the network, y is the ground truth'''
+  return y*np.log2(y_hat) + (1-y)*np.log2(1-y_hat)
+
+def binary_cross_entropy_gradient(y, y_hat):
+  '''gradient of mse: mean squared error loss: (y_hat - y). y_hat is the estimate from the network, y is the ground truth'''
+  return (y/y_hat) - (1-y)/(1-y_hat)
 
 
 def RunNetwork(epochs, X, Y, learning_rate, error_function, error_grad,network):
@@ -110,7 +140,7 @@ def RunNetwork(epochs, X, Y, learning_rate, error_function, error_grad,network):
       for layer in reversed(network):
         grad = layer.backward_pass(grad, learning_rate)  # weights updated on a per data pair basis, i.e. stochastic gradient descent.
 
-    #loss /= len(Y)
+    # loss /= len(Y)
     #print("epoch {} of {},  error = {}".format(epoch + 1, epochs, loss))
   for layer in network:
     print("layer: ", layer)
