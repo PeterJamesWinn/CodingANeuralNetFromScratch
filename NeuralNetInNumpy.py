@@ -1,6 +1,9 @@
 
 # This code was informed by Justin Johnsons Deep Learning for Vision lectures at Michigan, available on Youtube,
-# Andrej Karpathy/Justin Johnson/Fei-Fei Li's cs231n lectures at Stanford and The Independent Code's video on Youtube, Neural Network from Scratch.
+# and Andrej Karpathy/Justin Johnson/Fei-Fei Li's cs231n lectures at Stanford. 
+# The initial incarnation of the code was based on the code presented by The Independent Code in the YouTube video "Neural Network from Scratch" but has
+# had additions and restructurings of the implementation presented there, with anticipated future implementations going to introduce many more differences
+# from that start point.
 
 import numpy as np
 import tensorflow as tf
@@ -20,11 +23,6 @@ def GenerateTrainingData(min,max):
 def ModelFunction(DesignMatrix):
     return(5.0+DesignMatrix*3.0)
 
-
-class layer:  # set generic features to be inherited
-  def __init__(self, features_in=1, nodes_in_layer=1):
-    self.features_in = feature_in
-    self.nodes_in_layer = nodes_in_layer
 
 class dense_layer(): 
   ''' dense_layer: A layer is treated as an independent entity with its own feature vector input, being the original feature vector for 
@@ -72,7 +70,6 @@ class relu_layer():
     '''learning rate not needed but is passed because parameter update is embedded in backward pass of other layers.
     Indicates the need to refactor the code!'''
     local_gradient = np.where(self.relu < 0, 0, 1)
-    #print("self.relu in backward_pass. upstream gradient: \n {} \n local_gradient:\n {}".format(upstream_gradient, local_gradient))
     dL_dinput = np.array(upstream_gradient) * np.array(local_gradient)  # elementwise multiply
     return dL_dinput
 
@@ -109,15 +106,21 @@ def sigmoid(x):
 
 # loss functions aka error functions:
 def mse(y, y_hat): 
-  '''mse: mean squared error loss: 0.5(y_hat - y)squared. y_hat is the estimate from the network, y is the ground truth'''
+  '''mse: mean squared error loss: 0.5(y_hat - y)squared. y_hat is the estimate from the network, 
+  y is the ground truth. This is initially set up for stochastic gradient descent, so not calculating the
+  mean until after the epoch is complete. Will rethink if this really makes sense when refactoring code to include
+  batch learning. Current formulation doesn't seem like clean code. '''
   return 0.5*np.square(y_hat - y)
 
 def mse_gradient(y, y_hat):
-  '''gradient of mse: mean squared error loss: (y_hat - y). y_hat is the estimate from the network, y is the ground truth'''
+  '''gradient of mse: mean squared error loss: (y_hat - y). y_hat is the estimate from the network, 
+  y is the ground truth. Taking mean of this upon return to main evaluation loop. '''
   return y_hat - y
 
 def binary_cross_entropy(y, y_hat): 
-  '''binary cross entropy: y*np.log2(y_hat) + (1-y)*np.log2(1-y_hat) y_hat is the estimate from the network, y is the ground truth'''
+  '''binary cross entropy: y*np.log2(y_hat) + (1-y)*np.log2(1-y_hat) 
+  y_hat is the estimate from the network, y is the ground truth. This needs revising to allow vector input and
+  I need to check if there's a numerically more stable implementation.'''
   return y*np.log2(y_hat) + (1-y)*np.log2(1-y_hat)
 
 def binary_cross_entropy_gradient(y, y_hat):
@@ -135,8 +138,8 @@ def RunNetwork(epochs, X, Y, learning_rate, error_function, error_grad,network):
       #print("next input: ", next_input)
       for layer in network:  # for each data entry, x, y, from the previous for command, we iterate through the whole network with this loop.
         next_input = layer.forward_pass(next_input)  # output of one layer is to be the input of the next
-        #next_input is at this point y_hat, the predicted valuea
-      loss += 1/len(Y)*error_function(y,next_input)  # this line is in the loop for all data. Division by len(Y) is because MSE function doesn't actually calculate mean. 
+        #the variable next_input containts at this point y_hat, the predicted value.
+      loss += 1/len(Y)*error_function(y,next_input)  # this line is in the loop for all data. Division by len(Y) is because the current loss functions doesn't actually calculate mean. 
       grad=1/len(Y)*error_grad(y,next_input)  
       for layer in reversed(network):
         grad = layer.backward_pass(grad, learning_rate)  # weights updated on a per data pair basis, i.e. stochastic gradient descent.
