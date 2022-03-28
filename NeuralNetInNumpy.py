@@ -53,7 +53,7 @@ class dense_layer():
     dL_dw = np.dot(upstream_gradient, np.transpose(self.feature_vector)) # loss function with respect to weights
     #print("upstream_gradient, learning_rate", upstream_gradient, learning_rate)
     #print("dL_dw",dL_dw )
-    print("weights, rate, dL/dw: ", self.weights, learning_rate, dL_dw)
+    #print("weights, rate, dL/dw: ", self.weights, learning_rate, dL_dw)
     self.weights += -learning_rate * dL_dw
     self.bias += -learning_rate * upstream_gradient
     dL_dinput = np.transpose(self.weights).dot(upstream_gradient)  # sensitivity of loss function to feature vector of the layer 
@@ -72,7 +72,7 @@ class relu_layer():
     '''learning rate not needed but is passed because parameter update is embedded in backward pass of other layers.
     Indicates the need to refactor the code!'''
     local_gradient = np.where(self.relu < 0, 0, 1)
-    print("self.relu in backward_pass. upstream gradient: \n {} \n local_gradient:\n {}".format(upstream_gradient, local_gradient))
+    #print("self.relu in backward_pass. upstream gradient: \n {} \n local_gradient:\n {}".format(upstream_gradient, local_gradient))
     dL_dinput = np.array(upstream_gradient) * np.array(local_gradient)  # elementwise multiply
     return dL_dinput
 
@@ -95,7 +95,7 @@ class sigmoid_layer():
     '''learning rate not needed but is passed because parameter update is embedded in backward pass of other layers.
     Indicates the need to refactor the code!'''
     local_gradient = (1 - self.sigmoid)/self.sigmoid
-    print("self.sigmoid in backward_pass. upstream gradient: \n {} \n local_gradient:\n {}".format(upstream_gradient, local_gradient))
+    #print("self.sigmoid in backward_pass. upstream gradient: \n {} \n local_gradient:\n {}".format(upstream_gradient, local_gradient))
     dL_dinput = np.array(upstream_gradient) * np.array(local_gradient)  # elementwise multiply
     return dL_dinput
 
@@ -129,6 +129,7 @@ def RunNetwork(epochs, X, Y, learning_rate, error_function, error_grad,network):
   for epoch in range(epochs):
     loss = 0
     for x, y in zip(X,Y): # pairing feature vector and dependent variables and then iterating over each pairing. Zip zips the two vectors together into a list of tuples.
+      print("next input, x = ", x)
       next_input = x
       #print("epoch", epoch)
       #print("next input: ", next_input)
@@ -151,9 +152,15 @@ def RunNetwork(epochs, X, Y, learning_rate, error_function, error_grad,network):
   return
 
 def PredictWithNetwork(X, network):
+  #print("X arriving in PredictWithNetwork", X)
+  results=[]
   for x in X:
     next_input = x
+    #print("predicting for x=", x)
     for layer in network: 
       next_input = layer.forward_pass(next_input)
-    print("x, y", x, next_input)
-  return
+    #print("next prediction", str(next_input))  
+    results.append(next_input)  
+    #print("results", results)
+    #print("x, y", x, next_input)
+  return ( np.asarray(results).reshape(-1))
