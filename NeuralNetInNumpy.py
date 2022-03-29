@@ -8,6 +8,7 @@
 import numpy as np
 import tensorflow as tf
 
+# generating training data
 def GenerateTrainingData(min,max):
     '''GenerateTrainingData: example of use: DesignMatrix,TrainingValues= GenerateTrainingData(1,11)
     generates data points from 1 to 10 in steps of 1 and uses them to calculate dependent values using 
@@ -24,6 +25,7 @@ def ModelFunction(DesignMatrix):
     return(5.0+DesignMatrix*3.0)
 
 
+# network layers
 class dense_layer(): 
   ''' dense_layer: A layer is treated as an independent entity with its own feature vector input, being the original feature vector for 
       the first hidden layer, or the output of the previous layer for every subsequent layer. The output is a vector to be the 
@@ -77,8 +79,6 @@ def relu(x):
     ''' relu: relu function'''
     return np.where(x < 0, 0, x)
 
-
-
 class sigmoid_layer():
   def __init__(self):
     pass
@@ -105,29 +105,34 @@ def sigmoid(x):
     return np.where(x < 0, np.exp(x)/(1 + np.exp(x)), 1/(1 + np.exp(-x)))
 
 # loss functions aka error functions:
-def mse(y, y_hat): 
+def mse(y, y_hat, number_of_training_examples): 
   '''mse: mean squared error loss: 0.5(y_hat - y)squared. y_hat is the estimate from the network, 
-  y is the ground truth. This is initially set up for stochastic gradient descent, so not calculating the
-  mean until after the epoch is complete. Will rethink if this really makes sense when refactoring code to include
-  batch learning. Current formulation doesn't seem like clean code. '''
-  return 0.5*np.square(y_hat - y)
+  y is the ground truth. This is initially set up for stochastic gradient descent, so only one sample is transferred 
+  to the MSE function, which means that the number of training examples also needs to be passed to the function, 
+  to allow it to factor these into the calculation. Will rethink if this really makes sense when refactoring code to include
+  batch learning. Althought this formulation would also work for batch learning, the current formulation doesn't seem like clean code. '''
+  return np.square(y_hat - y)/number_of_training_examples
 
-def mse_gradient(y, y_hat):
+def mse_gradient(y, y_hat, number_of_training_examples):
   '''gradient of mse: mean squared error loss: (y_hat - y). y_hat is the estimate from the network, 
-  y is the ground truth. Taking mean of this upon return to main evaluation loop. '''
-  return y_hat - y
+  y is the ground truth. This is initially set up for stochastic gradient descent, so only one sample is transferred 
+  to the MSE function, which means that the number of training examples also needs to be passed to the function, 
+  to allow it to factor these into the calculation. Will rethink if this really makes sense when refactoring code to include
+  batch learning. Althought this formulation would also work for batch learning, the current formulation doesn't seem like clean code. '''
+  return (y_hat - y)/number_of_training_examples
 
-def binary_cross_entropy(y, y_hat): 
+def binary_cross_entropy(y, y_hat, number_of_training_examples): 
   '''binary cross entropy: y*np.log2(y_hat) + (1-y)*np.log2(1-y_hat) 
   y_hat is the estimate from the network, y is the ground truth. This needs revising to allow vector input and
   I need to check if there's a numerically more stable implementation.'''
-  return y*np.log2(y_hat) + (1-y)*np.log2(1-y_hat)
+  return (y*np.log2(y_hat) + (1-y)*np.log2(1-y_hat))/number_of_training_examples
 
-def binary_cross_entropy_gradient(y, y_hat):
+def binary_cross_entropy_gradient(y, y_hat, number_of_training_examples):
   '''gradient of mse: mean squared error loss: (y_hat - y). y_hat is the estimate from the network, y is the ground truth'''
-  return (y/y_hat) - (1-y)/(1-y_hat)
+  return ((y/y_hat) - (1-y)/(1-y_hat))/number_of_training_examples
 
 
+#### functions for training and inference
 def RunNetwork(epochs, X, Y, learning_rate, error_function, error_grad,network):
   for epoch in range(epochs):
     loss = 0
@@ -139,20 +144,21 @@ def RunNetwork(epochs, X, Y, learning_rate, error_function, error_grad,network):
       for layer in network:  # for each data entry, x, y, from the previous for command, we iterate through the whole network with this loop.
         next_input = layer.forward_pass(next_input)  # output of one layer is to be the input of the next
         #the variable next_input containts at this point y_hat, the predicted value.
-      loss += 1/len(Y)*error_function(y,next_input)  # this line is in the loop for all data. Division by len(Y) is because the current loss functions doesn't actually calculate mean. 
-      grad=1/len(Y)*error_grad(y,next_input)  
+      loss += error_function(y,next_input, len(Y))  # this line is in the loop for all data. Division by len(Y) is because the current loss functions doesn't actually calculate mean. 
+      grad = error_grad(y,next_input, len(Y))  
       for layer in reversed(network):
         grad = layer.backward_pass(grad, learning_rate)  # weights updated on a per data pair basis, i.e. stochastic gradient descent.
 
-    # loss /= len(Y)
     #print("epoch {} of {},  error = {}".format(epoch + 1, epochs, loss))
-  for layer in network:
+  '''  for layer in network:
     print("layer: ", layer)
     try:
       print("bias: {} \n weight {} \n".format(layer.bias,layer.weights))
     except:
       pass
   return
+  '''
+
 
 def PredictWithNetwork(X, network):
   #print("X arriving in PredictWithNetwork", X)
