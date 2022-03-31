@@ -106,7 +106,7 @@ def sigmoid(x):
 
 # loss functions aka error functions:
 def mse(y, y_hat, number_of_training_examples): 
-  '''mse: mean squared error loss: 0.5(y_hat - y)squared. y_hat is the estimate from the network, 
+  '''mse: mean squared error loss: (y_hat - y)squared. y_hat is the estimate from the network, 
   y is the ground truth. This is initially set up for stochastic gradient descent, so only one sample is transferred 
   to the MSE function, which means that the number of training examples also needs to be passed to the function, 
   to allow it to factor these into the calculation. Will rethink if this really makes sense when refactoring code to include
@@ -114,7 +114,7 @@ def mse(y, y_hat, number_of_training_examples):
   return np.square(y_hat - y)/number_of_training_examples
 
 def mse_gradient(y, y_hat, number_of_training_examples):
-  '''gradient of mse: mean squared error loss: (y_hat - y). y_hat is the estimate from the network, 
+  '''gradient of mse: mean squared error loss: (y_hat - y) - ignoring the factor of 2, which will be absorbed into the learning rate. y_hat is the estimate from the network, 
   y is the ground truth. This is initially set up for stochastic gradient descent, so only one sample is transferred 
   to the MSE function, which means that the number of training examples also needs to be passed to the function, 
   to allow it to factor these into the calculation. Will rethink if this really makes sense when refactoring code to include
