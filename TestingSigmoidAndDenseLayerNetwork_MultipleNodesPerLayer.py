@@ -12,8 +12,8 @@ network = [dense_layer(1,6), sigmoid_layer(), dense_layer(6,1)]
 #scale_factor = np.std(X)
 #X = X/scale_factor
 print(X,Y)
-epochs = 2000
-learning_rate = 0.000000005
+epochs = 500
+learning_rate = 0.00005
 # define the error function
 error_function=mse  
 error_grad=mse_gradient
@@ -21,5 +21,6 @@ RunNetwork(epochs, X, Y, learning_rate, error_function, error_grad, network)
 
 #DesignMatrix,TestingValues= np.matrix([-10001,-510, 1, 10000, -100000, -2000000,  2, 7]), np.matrix([0, 0, 1, 1, 0, 0,  1, 1])
 DesignMatrix,TestingValues= GenerateTrainingData(30,41)
-PredictWithNetwork(DesignMatrix, network)
+Predicted_Values=PredictWithNetwork(DesignMatrix, network)
+print("predictions:", DesignMatrix, Predicted_Values)
 print("actual values:", DesignMatrix,TestingValues )

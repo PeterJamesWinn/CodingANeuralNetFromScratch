@@ -12,7 +12,7 @@ DesignMatrix,TrainingValues= GenerateTrainingData(1,11)
 X=np.transpose(DesignMatrix)  # make column vector inputs
 Y=np.transpose(TrainingValues)
 print(X,Y)
-epochs = 100
+epochs = 500
 learning_rate = 0.1
 # define the error function
 error_function=mse  
@@ -20,5 +20,6 @@ error_grad=mse_gradient
 RunNetwork(epochs, X, Y, learning_rate, error_function, error_grad, network)
 
 DesignMatrix,TestingValues= GenerateTrainingData(30,41)
-PredictWithNetwork(DesignMatrix, network)
+Predicted_Values=PredictWithNetwork(DesignMatrix, network)
+print("predictions:", DesignMatrix, Predicted_Values)
 print("actual values:", DesignMatrix,TestingValues )

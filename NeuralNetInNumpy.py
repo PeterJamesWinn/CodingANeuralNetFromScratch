@@ -51,12 +51,14 @@ class dense_layer():
        (i.e. downstream gradient of this layer - see Justin Johnson's Deep Learning for Vision lecture number 6 for dicussion).
        Currently hardcoded to run gradient descent. Other options to follow!'''
     dL_dw = np.dot(upstream_gradient, np.transpose(self.feature_vector)) # loss function with respect to weights
-    #print("upstream_gradient, learning_rate", upstream_gradient, learning_rate)
-    #print("dL_dw",dL_dw )
-    #print("weights, rate, dL/dw: ", self.weights, learning_rate, dL_dw)
+    print("Dense: upstream_gradient:\n {} self.feature_vector: \n {}".format(upstream_gradient, self.feature_vector))
+    print("dL_dw",dL_dw )
+    print("weights, rate, dL/dw: ", self.weights, learning_rate, dL_dw)
+    dL_dinput = np.dot(np.transpose(self.weights), upstream_gradient)  # sensitivity of loss function to feature vector/activations coming into the current layer from the previous layer. This needs to be calculated before the weights update.
     self.weights += -learning_rate * dL_dw
     self.bias += -learning_rate * upstream_gradient
-    dL_dinput = np.transpose(self.weights).dot(upstream_gradient)  # sensitivity of loss function to feature vector of the layer 
+    print("np.transpose(self.weights)", np.transpose(self.weights))
+    print("upstream_gradient", upstream_gradient)
     return dL_dinput
 
 class relu_layer():
@@ -71,13 +73,15 @@ class relu_layer():
   def backward_pass(self, upstream_gradient, learning_rate): 
     '''learning rate not needed but is passed because parameter update is embedded in backward pass of other layers.
     Indicates the need to refactor the code!'''
-    local_gradient = np.where(self.relu < 0, 0, 1)
+    local_gradient = np.where(self.relu < 0, 0, 1)  # if relu forward returned 0 return zero or otherwise 1. 
+    print("Relu: upstream_gradient:\n {} \n".format(upstream_gradient))
+    print(" local gradient, rate", local_gradient, learning_rate)
     dL_dinput = np.array(upstream_gradient) * np.array(local_gradient)  # elementwise multiply
     return dL_dinput
 
 def relu(x):
     ''' relu: relu function'''
-    return np.where(x < 0, 0, x)
+    return np.where(x < 0, 0, x) #if x < 0 return zero or otherwise x. 
 
 class sigmoid_layer():
   def __init__(self):
@@ -121,26 +125,44 @@ def mse_gradient(y, y_hat, number_of_training_examples):
   batch learning. Althought this formulation would also work for batch learning, the current formulation doesn't seem like clean code. '''
   return (y_hat - y)/number_of_training_examples
 
-def binary_cross_entropy(y, y_hat, number_of_training_examples): 
+def binary_cross_entropy1(y, y_hat, number_of_training_examples): 
   '''binary cross entropy: y*np.log2(y_hat) + (1-y)*np.log2(1-y_hat) 
   y_hat is the estimate from the network, y is the ground truth. This needs revising to allow vector input and
   I need to check if there's a numerically more stable implementation.'''
   return (y*np.log2(y_hat) + (1-y)*np.log2(1-y_hat))/number_of_training_examples
 
-def binary_cross_entropy_gradient(y, y_hat, number_of_training_examples):
+def binary_cross_entropy(y, y_hat, number_of_training_examples): 
+  '''binary cross entropy: y*np.log2(y_hat) + (1-y)*np.log2(1-y_hat) 
+  y_hat is the estimate from the network, y is the ground truth.'''
+  #print("y*np.log2(np.clip((y_hat), 1e-120, None)): ", y*np.log2(np.clip((y_hat), 1e-120, None)), "\n")
+  #print("(1-y)*np.log2(np.clip((1-y_hat), 1e-120, None)): ", (1-y)*np.log2(np.clip((1-y_hat), 1e-120, None)),"\n")
+  return (y*np.log2(np.clip((y_hat), 1e-120, None)) + (1-y)*np.log2(np.clip((1-y_hat), 1e-120, None)))/number_of_training_examples # clipping to avoid log(0) minus inf. . (y*np.log2(y_hat) + (1-y)*np.log2(1-y_hat))/number_of_training_examples
+
+
+def binary_cross_entropy_gradient1(y, y_hat, number_of_training_examples):
   '''gradient of mse: mean squared error loss: (y_hat - y). y_hat is the estimate from the network, y is the ground truth'''
   return ((y/y_hat) - (1-y)/(1-y_hat))/number_of_training_examples
+
+def binary_cross_entropy_gradient(y, y_hat, number_of_training_examples):
+  '''gradient of mse: mean squared error loss: (y_hat - y). y_hat is the estimate from the network, y is the ground truth'''
+  #print("(y/y_hat): ", ((np.clip(y, 1e-120, None))/np.clip(y_hat, 1e-120, None)))
+  #print("np.clip((1-y), 1e-120, None)/(np.clip((1-y_hat), 1e-120, None): ", np.clip((1-y), 1e-120, None)/(np.clip((1-y_hat), 1e-120, None)))
+  return ((np.clip(y, 1e-120, None)/np.clip(y_hat, 1e-120, None)) - np.clip((1-y), 1e-120, None)/np.clip((1-y_hat), 1e-120, None))/number_of_training_examples # clipping to avoid divide by zero inf. -((y/y_hat) - (1-y)/(1-y_hat))/number_of_training_examples; y/y_hat needs clipping top and bottom otherwise it doesn't tend to 1 as y and y_hat tend to zero.
+
+def binary_cross_entropy_gradient2(y, y_hat, number_of_training_examples):
+  '''gradient of mse: mean squared error loss: (y_hat - y). y_hat is the estimate from the network, y is the ground truth'''
+  return (np.clip((y-y_hat), 1e-120, None)/np.clip((y_hat-y_hat*y_hat), 1e-120, None)/number_of_training_examples)  # this is incorrect at the moment since y-y_hat can be negative  and if so will get clipped. Otherwise would be a more efficient implementation.
 
 
 #### functions for training and inference
 def RunNetwork(epochs, X, Y, learning_rate, error_function, error_grad,network):
   for epoch in range(epochs):
+    print("epoch", epoch)
     loss = 0
     for x, y in zip(X,Y): # pairing feature vector and dependent variables and then iterating over each pairing. Zip zips the two vectors together into a list of tuples.
-      print("next input, x = ", x)
-      next_input = x
-      #print("epoch", epoch)
-      #print("next input: ", next_input)
+      #print("next input, x = ", x)
+      next_input = x      
+      print("next input: ", next_input)
       for layer in network:  # for each data entry, x, y, from the previous for command, we iterate through the whole network with this loop.
         next_input = layer.forward_pass(next_input)  # output of one layer is to be the input of the next
         #the variable next_input containts at this point y_hat, the predicted value.

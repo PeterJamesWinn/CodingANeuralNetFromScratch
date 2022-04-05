@@ -26,5 +26,6 @@ RunNetwork(epochs, X, Y, learning_rate, error_function, error_grad, network)
 #  x = x/np.max(abs(DesignMatrix))  # normalise data
 #  print("normalised x: ", x)
 DesignMatrix,TestingValues= GenerateTrainingData(30,41)
-PredictWithNetwork(DesignMatrix, network)
+Predicted_Values=PredictWithNetwork(X, network)
+print("predictions:", DesignMatrix, Predicted_Values)
 print("actual values:", DesignMatrix,TestingValues )

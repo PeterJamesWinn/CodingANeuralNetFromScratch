@@ -25,8 +25,8 @@ network = [dense_layer(1,6), relu_layer(), dense_layer(6,1), sigmoid_layer()]
 #X -= np.mean(X, axis=0)
 
 # Training parameters
-epochs = 10
-learning_rate = 0.00003
+epochs = 150
+learning_rate = 0.000003
 # define the error function
 error_function=binary_cross_entropy  
 error_grad=binary_cross_entropy_gradient
