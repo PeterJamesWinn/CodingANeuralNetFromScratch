@@ -4,9 +4,18 @@
 The code was informed by Justin Johnsons Deep Learning for Vision lectures at Michigan, available on Youtube,
 and Andrej Karpathy/Justin Johnson/Fei-Fei Li's cs231n lectures at Stanford. 
 The initial incarnation of the code was based on the code presented by The Independent Code in the YouTube video "Neural Network from Scratch" but has
-had additions (sigmod, relu, binary cross entropy) and restructurings of the implementation presented there, with anticipated future implementations going to introduce many more differences from that start point.
+had additions (sigmoid, relu, binary cross entropy) and restructurings of the implementation presented there, with anticipated future implementations going to introduce many more differences from that start point.
 
+Updates 7th April 2022
 
+Updated RunNetwork to take a 2D feature vector and presumably higher dimensions. This involved some fiddling around regarding the difference in how numpy treats an array of shape (2, ) compared to (2,1), the former being a 1D array, the latter being 2D, despite them containing the same number of elements. This works for the test routine:
+TestingReluAndDenseLayerNetwork_MSE_2DFeatureVectors.py.
+
+started some work on the function RunNetwork_BatchOptimisation but this is in no way functional
+
+Need further test this version, for 3D feature vector, and then for all the previous test cases. 
+Need to continue with the code for a full batch gradient descnent rather than stochastic gradient descent, and from there mini batches, batch normalisation, adagrad and adam.
+Also need a good tidy up of everything! 
 
 
 Updates 5th April 2022.

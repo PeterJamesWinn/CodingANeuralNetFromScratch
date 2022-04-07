@@ -17,14 +17,34 @@ def GenerateTrainingData(min,max):
     TrainingValues=[]
     for data in range(min,max):
         DesignMatrixString.append(data)
-    DesignMatrix=np.asarray(DesignMatrixString)
-    TrainingValues=ModelFunction(DesignMatrix)
+    DesignMatrix=np.asarray(DesignMatrixString).reshape((1,(max-min)))
+    TrainingValues=np.asarray(ModelFunction(DesignMatrix)).reshape((1,(max-min)))
+    #DesignMatrix=np.asarray(DesignMatrixString)
+    #TrainingValues=np.asarray(ModelFunction(DesignMatrix))
     return(DesignMatrix,TrainingValues)  
 
 def ModelFunction(DesignMatrix):
     return(5.0+DesignMatrix*3.0)
 
+def GenerateTrainingData_2DFeature(min,max):
+    '''GenerateTrainingData: example of use: DesignMatrix,TrainingValues= GenerateTrainingData(1,11)
+    generates data points from 1 to 10 in steps of 1 and uses them to calculate dependent values using 
+    the function defined in ModelFuction()'''
+    DesignMatrixString1=[]  # Generate as string and then convert, below, to array 
+    DesignMatrixString2=[]
+    TrainingValues=[]
+    for data in range(min,max):
+        DesignMatrixString1.append(data)
+        DesignMatrixString2.append(data)
+    DesignMatrix1 = np.asarray(DesignMatrixString1).reshape((1,(max-min)))
+    DesignMatrix2 = np.asarray(DesignMatrixString2).reshape((1,(max-min)))
+    TrainingValues = np.asarray(ModelFunction2D(DesignMatrix1, DesignMatrix2)).reshape((1,(max-min)))
+    #DesignMatrix=np.asarray(DesignMatrixString)
+    #TrainingValues=np.asarray(ModelFunction(DesignMatrix))
+    return(DesignMatrix1, DesignMatrix2, TrainingValues)  
 
+def ModelFunction2D(DesignMatrix1, DesignMatrix2):
+    return(5.0+DesignMatrix1*3.0 + DesignMatrix2*5.0)
 # network layers
 class dense_layer(): 
   ''' dense_layer: A layer is treated as an independent entity with its own feature vector input, being the original feature vector for 
@@ -42,9 +62,15 @@ class dense_layer():
    
 
   def forward_pass(self,feature_vector): # returns final value of the layer
-    self.feature_vector = feature_vector # needed for backward_pass
-    return np.dot(self.weights, feature_vector) + self.bias
-   
+    self.feature_vector = np.asarray(feature_vector) # needed for backward_pass
+    print("forward pass. Weights:  {} \n feature_vector {} \n bias {}" .format(self.weights, feature_vector, self.bias))
+    print("forward pass. Shapes: Weights:  {} \n feature_vector {} \n bias {}" .format(self.weights.shape, feature_vector.shape, self.bias.shape))
+    forward_calc = np.dot(self.weights, self.feature_vector) 
+    print("forward_calc, value and shape", forward_calc, forward_calc.shape)
+    forward_calc = np.dot(self.weights, self.feature_vector) + self.bias
+    print("forward_calc, value and shape", forward_calc, forward_calc.shape)
+    # return np.dot(self.weights, self.feature_vector) + self.bias
+    return  forward_calc
 
   def backward_pass(self, upstream_gradient, learning_rate): 
     '''dense_layer backward_pass: updates the weights of the layer and the upstreamstream gradient for the next layer 
@@ -56,6 +82,7 @@ class dense_layer():
     print("weights, rate, dL/dw: ", self.weights, learning_rate, dL_dw)
     dL_dinput = np.dot(np.transpose(self.weights), upstream_gradient)  # sensitivity of loss function to feature vector/activations coming into the current layer from the previous layer. This needs to be calculated before the weights update.
     self.weights += -learning_rate * dL_dw
+    print((learning_rate * upstream_gradient),self.bias)
     self.bias += -learning_rate * upstream_gradient
     print("np.transpose(self.weights)", np.transpose(self.weights))
     print("upstream_gradient", upstream_gradient)
@@ -123,6 +150,7 @@ def mse_gradient(y, y_hat, number_of_training_examples):
   to the MSE function, which means that the number of training examples also needs to be passed to the function, 
   to allow it to factor these into the calculation. Will rethink if this really makes sense when refactoring code to include
   batch learning. Althought this formulation would also work for batch learning, the current formulation doesn't seem like clean code. '''
+  print("in mse_gradient, y_hat, y, y_hat - y: ", y_hat, y, y_hat-y)
   return (y_hat - y)/number_of_training_examples
 
 def binary_cross_entropy1(y, y_hat, number_of_training_examples): 
@@ -159,16 +187,24 @@ def RunNetwork(epochs, X, Y, learning_rate, error_function, error_grad,network):
   for epoch in range(epochs):
     print("epoch", epoch)
     loss = 0
-    for x, y in zip(X,Y): # pairing feature vector and dependent variables and then iterating over each pairing. Zip zips the two vectors together into a list of tuples.
+    for pointer_position in range(0,len(Y)):
+      x = np.transpose(np.copy(X[pointer_position:pointer_position+1]))
+      y = np.copy(Y[pointer_position:pointer_position+1])
+    
+    #for x, y in zip(X,Y): # pairing feature vector and dependent variables and then iterating over each pairing. Zip zips the two vectors together into a list of tuples.
       #print("next input, x = ", x)
+      print("x, y ", x, y)
       next_input = x      
       print("next input: ", next_input)
       for layer in network:  # for each data entry, x, y, from the previous for command, we iterate through the whole network with this loop.
+        print("Forward Pass: next input: ", next_input)
         next_input = layer.forward_pass(next_input)  # output of one layer is to be the input of the next
         #the variable next_input containts at this point y_hat, the predicted value.
       loss += error_function(y,next_input, len(Y))  # this line is in the loop for all data. Division by len(Y) is because the current loss functions doesn't actually calculate mean. 
       grad = error_grad(y,next_input, len(Y))  
+      print("Backpropagation")
       for layer in reversed(network):
+        print("grad: ", grad )
         grad = layer.backward_pass(grad, learning_rate)  # weights updated on a per data pair basis, i.e. stochastic gradient descent.
 
     #print("epoch {} of {},  error = {}".format(epoch + 1, epochs, loss))
@@ -181,17 +217,41 @@ def RunNetwork(epochs, X, Y, learning_rate, error_function, error_grad,network):
   return
   '''
 
+'''def RunNetwork_BatchOptimisation(epochs, X, Y, learning_rate, error_function, error_grad,network):
+  #This currently is a sketch - a copy and paste of RunNetwork with minor modification. Not yet functional
+  for epoch in range(epochs):
+    print("epoch", epoch)
+    loss = 0  
+    next_input = X
+    print("next input: ", next_input)
+    for layer in network:  # for each data entry, x, y, from the previous for command, we iterate through the whole network with this loop.
+      next_input = layer.forward_pass(next_input)  # output of one layer is to be the input of the next
+      #the variable next_input containts at this point y_hat, the predicted value.
+      print("next input: ", next_input)
+    print("just about to calculate loss", X,Y)
+    loss += error_function(Y, next_input, len(Y))  # this line is in the loop for all data. Division by len(Y) is because the current loss functions doesn't actually calculate mean. 
+    grad = error_grad(Y,next_input, len(Y))  
+    for layer in reversed(network):
+      grad = layer.backward_pass(grad, learning_rate)  # weights updated on a per data pair basis, i.e. stochastic gradient descent.
+  return
+  '''
+
+
 
 def PredictWithNetwork(X, network):
   #print("X arriving in PredictWithNetwork", X)
   results=[]
-  for x in X:
+  #for x in X:
+  for pointer_position in range(0,len(X[0:,])):
+    x = np.transpose(np.copy(X[pointer_position:pointer_position+1]))
+      #y = np.copy(Y[pointer_position:pointer_position+1])
     next_input = x
-    #print("predicting for x=", x)
+    print("predicting for x=", x)
     for layer in network: 
       next_input = layer.forward_pass(next_input)
     #print("next prediction", str(next_input))  
     results.append(next_input)  
     #print("results", results)
     #print("x, y", x, next_input)
+  print('Input Features: {} \n Predicted Output: {} '.format(X, results))
   return ( np.asarray(results).reshape(-1))
