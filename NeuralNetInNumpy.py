@@ -27,7 +27,7 @@ def ModelFunction(DesignMatrix):
     return(5.0+DesignMatrix*3.0)
 
 def GenerateTrainingData_2DFeature(min,max):
-    '''GenerateTrainingData: example of use: DesignMatrix,TrainingValues= GenerateTrainingData(1,11)
+    '''GenerateTrainingData: example of use: DesignMatrix1, DesignMatrix2, TrainingValues= GenerateTrainingData_2DFeature(1,10)
     generates data points from 1 to 10 in steps of 1 and uses them to calculate dependent values using 
     the function defined in ModelFuction()'''
     DesignMatrixString1=[]  # Generate as string and then convert, below, to array 
@@ -45,6 +45,28 @@ def GenerateTrainingData_2DFeature(min,max):
 
 def ModelFunction2D(DesignMatrix1, DesignMatrix2):
     return(5.0+DesignMatrix1*3.0 + DesignMatrix2*5.0)
+
+def GenerateTrainingData_3DFeature(min,max):
+    '''GenerateTrainingData: example of use: DesignMatrix1, DesignMatrix2, DesignMatrix3, TrainingValues= GenerateTrainingData_3DFeature(1,10)
+    generates data points from 1 to 10 in steps of 1 and uses them to calculate dependent values using 
+    the function defined in ModelFuction()'''
+    DesignMatrixString1=[]  # Generate as string and then convert, below, to array 
+    DesignMatrixString2=[]
+    DesignMatrixString3=[]
+    TrainingValues=[]
+    for data in range(min,max):
+        DesignMatrixString1.append(data)
+        DesignMatrixString2.append(data)
+        DesignMatrixString3.append(data)
+    DesignMatrix1 = np.asarray(DesignMatrixString1).reshape((1,(max-min)))
+    DesignMatrix2 = np.asarray(DesignMatrixString2).reshape((1,(max-min)))
+    DesignMatrix3 = np.asarray(DesignMatrixString3).reshape((1,(max-min)))
+    TrainingValues = np.asarray(ModelFunction3D(DesignMatrix1, DesignMatrix2, DesignMatrix3)).reshape((1,(max-min)))
+    return(DesignMatrix1, DesignMatrix2, DesignMatrix3, TrainingValues)  
+
+def ModelFunction3D(DesignMatrix1, DesignMatrix2, DesignMatrix3):
+    return(5.0+DesignMatrix1*3.0 + DesignMatrix2*5.0 + DesignMatrix3*5.0)
+
 # network layers
 class dense_layer(): 
   ''' dense_layer: A layer is treated as an independent entity with its own feature vector input, being the original feature vector for 
@@ -63,12 +85,12 @@ class dense_layer():
 
   def forward_pass(self,feature_vector): # returns final value of the layer
     self.feature_vector = np.asarray(feature_vector) # needed for backward_pass
-    print("forward pass. Weights:  {} \n feature_vector {} \n bias {}" .format(self.weights, feature_vector, self.bias))
-    print("forward pass. Shapes: Weights:  {} \n feature_vector {} \n bias {}" .format(self.weights.shape, feature_vector.shape, self.bias.shape))
+    print("forward pass. Weights:\n  {} \n feature_vector {} \n bias {}" .format(self.weights, feature_vector, self.bias))
+    print("forward pass. Shapes: Weights: \n {} \n feature_vector {} \n bias {}" .format(self.weights.shape, feature_vector.shape, self.bias.shape))
     forward_calc = np.dot(self.weights, self.feature_vector) 
-    print("forward_calc, value and shape", forward_calc, forward_calc.shape)
+    print("forward_calc, value and shape pre addition of bias", forward_calc, forward_calc.shape)
     forward_calc = np.dot(self.weights, self.feature_vector) + self.bias
-    print("forward_calc, value and shape", forward_calc, forward_calc.shape)
+    print("forward_calc, value and shape post addition of bias", forward_calc, forward_calc.shape)
     # return np.dot(self.weights, self.feature_vector) + self.bias
     return  forward_calc
 
@@ -77,12 +99,12 @@ class dense_layer():
        (i.e. downstream gradient of this layer - see Justin Johnson's Deep Learning for Vision lecture number 6 for dicussion).
        Currently hardcoded to run gradient descent. Other options to follow!'''
     dL_dw = np.dot(upstream_gradient, np.transpose(self.feature_vector)) # loss function with respect to weights
-    print("Dense: upstream_gradient:\n {} self.feature_vector: \n {}".format(upstream_gradient, self.feature_vector))
-    print("dL_dw",dL_dw )
-    print("weights, rate, dL/dw: ", self.weights, learning_rate, dL_dw)
+    print("Dense: upstream_gradient:\n {} self.feature_vector: \n {} \n".format(upstream_gradient, self.feature_vector))
+    print("dL_dw \n",dL_dw,  "\n")
+    print("weights, rate, dL/dw: ", self.weights, learning_rate, dL_dw, "\n")
     dL_dinput = np.dot(np.transpose(self.weights), upstream_gradient)  # sensitivity of loss function to feature vector/activations coming into the current layer from the previous layer. This needs to be calculated before the weights update.
     self.weights += -learning_rate * dL_dw
-    print((learning_rate * upstream_gradient),self.bias)
+    print("(learning_rate * upstream_gradient),self.bias", (learning_rate * upstream_gradient),self.bias)
     self.bias += -learning_rate * upstream_gradient
     print("np.transpose(self.weights)", np.transpose(self.weights))
     print("upstream_gradient", upstream_gradient)
@@ -93,14 +115,14 @@ class relu_layer():
     pass
 
   def forward_pass(self, feature_vector):
-    self.relu = relu(feature_vector)  # save for backward pass
-    return self.relu
+    self.features = feature_vector  # save for backward pass
+    return relu(feature_vector)
 
   
   def backward_pass(self, upstream_gradient, learning_rate): 
     '''learning rate not needed but is passed because parameter update is embedded in backward pass of other layers.
     Indicates the need to refactor the code!'''
-    local_gradient = np.where(self.relu < 0, 0, 1)  # if relu forward returned 0 return zero or otherwise 1. 
+    local_gradient = np.where(self.features < 0.0, 0, 1)  # if relu forward received a negative feature return zero or otherwise 1. 
     print("Relu: upstream_gradient:\n {} \n".format(upstream_gradient))
     print(" local gradient, rate", local_gradient, learning_rate)
     dL_dinput = np.array(upstream_gradient) * np.array(local_gradient)  # elementwise multiply
@@ -123,7 +145,7 @@ class sigmoid_layer():
     '''learning rate not needed but is passed because parameter update is embedded in backward pass of other layers.
     Indicates the need to refactor the code!'''
     local_gradient = (1 - self.sigmoid)/self.sigmoid
-    #print("self.sigmoid in backward_pass. upstream gradient: \n {} \n local_gradient:\n {}".format(upstream_gradient, local_gradient))
+    print("self.sigmoid in backward_pass. upstream gradient: \n {} \n local_gradient:\n {}".format(upstream_gradient, local_gradient))
     dL_dinput = np.array(upstream_gradient) * np.array(local_gradient)  # elementwise multiply
     return dL_dinput
 
@@ -184,6 +206,7 @@ def binary_cross_entropy_gradient2(y, y_hat, number_of_training_examples):
 
 #### functions for training and inference
 def RunNetwork(epochs, X, Y, learning_rate, error_function, error_grad,network):
+  print("Training Network")
   for epoch in range(epochs):
     print("epoch", epoch)
     loss = 0
@@ -217,7 +240,7 @@ def RunNetwork(epochs, X, Y, learning_rate, error_function, error_grad,network):
   return
   '''
 
-'''def RunNetwork_BatchOptimisation(epochs, X, Y, learning_rate, error_function, error_grad,network):
+def RunNetwork_BatchOptimisation(epochs, X, Y, learning_rate, error_function, error_grad,network):
   #This currently is a sketch - a copy and paste of RunNetwork with minor modification. Not yet functional
   for epoch in range(epochs):
     print("epoch", epoch)
@@ -234,7 +257,7 @@ def RunNetwork(epochs, X, Y, learning_rate, error_function, error_grad,network):
     for layer in reversed(network):
       grad = layer.backward_pass(grad, learning_rate)  # weights updated on a per data pair basis, i.e. stochastic gradient descent.
   return
-  '''
+
 
 
 

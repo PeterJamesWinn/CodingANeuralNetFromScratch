@@ -6,6 +6,104 @@ and Andrej Karpathy/Justin Johnson/Fei-Fei Li's cs231n lectures at Stanford.
 The initial incarnation of the code was based on the code presented by The Independent Code in the YouTube video "Neural Network from Scratch" but has
 had additions (sigmoid, relu, binary cross entropy) and restructurings of the implementation presented there, with anticipated future implementations going to introduce many more differences from that start point.
 
+Updates 13th April 2022
+Created simple functions to generate a data set with 3D feature vector.
+Tested network regression problem with 3D input feature vector successfully (TestingReluAndDenseLayerNetwork_MSE_3DFeatureVectors.py). 
+Fixed an error in the relu back propagation/gradient function.
+Tested current code on a simple one 1 feature vector classification problem:
+TestingReluAndDenseLayerNetwork_BinaryCrossEntropy.py, which functions but needs very
+small learning rate else we get vanishing gradient problems. 
+
+Next changes: Full batch and mini batch, batch normalisation. Network class. jax.
+
+Testing with 3D feature vector, TestingReluAndDenseLayerNetwork_MSE_3DFeatureVectors.py, 20 epochs of learning shows a functional network that would converge to the correct answer if run for more epochs. 
+network = [dense_layer(3,6), relu_layer(),  dense_layer(6,1)]
+predictions on testing data : [[40 40 40]
+ [41 41 41]
+ [42 42 42]
+ [43 43 43]
+ [44 44 44]
+ [45 45 45]
+ [46 46 46]
+ [47 47 47]
+ [48 48 48]
+ [49 49 49]] [522.77912993 535.7166879  548.65424586 561.59180382 574.52936178
+ 587.46691974 600.4044777  613.34203566 626.27959363 639.21715159]
+actual values: [[40 40 40]
+ [41 41 41]
+ [42 42 42]
+ [43 43 43]
+ [44 44 44]
+ [45 45 45]
+ [46 46 46]
+ [47 47 47]
+ [48 48 48]
+ [49 49 49]] [[525. 538. 551. 564. 577. 590. 603. 616. 629. 642.]]
+predictions on training data: [[1 1 1]
+ [2 2 2]
+ [3 3 3]
+ [4 4 4]
+ [5 5 5]
+ [6 6 6]
+ [7 7 7]
+ [8 8 8]
+ [9 9 9]] [ 18.21436943  31.1519274   44.08948536  57.02704332  69.96460128
+  82.90215924  95.8397172  108.77727516 121.71483313]
+actual values: [[1 1 1]
+ [2 2 2]
+ [3 3 3]
+ [4 4 4]
+ [5 5 5]
+ [6 6 6]
+ [7 7 7]
+ [8 8 8]
+ [9 9 9]] [[ 18.  31.  44.  57.  70.  83.  96. 109. 122.]]
+
+
+
+TestingReluAndDenseLayerNetwork_BinaryCrossEntropy.py
+network = [dense_layer(1,6), relu_layer(), dense_layer(6,1), sigmoid_layer()]
+changed input script to provide data as 2D ndarray instead of matrix
+epochs = 20
+learning_rate = 0.00003
+error_function=binary_cross_entropy  
+error_grad=binary_cross_entropy_gradient
+Predictions on training data sufficient to separate:
+predictions: [[ 50  -1  10 -10 -15 -20  20  17]] [0.86254532 0.0306707  0.1112121  0.02426122 0.02206736 0.02079674
+ 0.26343908 0.21171042]
+actual values: [[ 50  -1  10 -10 -15 -20  20  17]] [[1 0 1 0 0 0 1 1]]
+[1 0 1 0 0 0 1 1] [0.86254532 0.0306707  0.1112121  0.02426122 0.02206736 0.02079674
+ 0.26343908 0.21171042]
+ On test data poor prediction performance but network code works:
+ predictions: [[ -100  -510     1   100 -1000    -2    29    67]] [0.03583853 0.94063181 0.03453483 0.99865659 0.99995457 0.02889898
+ 0.45791461 0.96952676]
+actual values: [[ -100  -510     1   100 -1000    -2    29    67]] [[0 0 1 1 0 0 1 1]]
+test data still gives poor results:
+predictions: [[ -100  -510     1   100 -1000    -2    29    67]] [3.00175808e-01 4.72791285e-07 7.20504626e-01 3.16857021e-01
+ 7.98121048e-14 7.49263265e-01 4.18255481e-01 3.12605686e-01]
+actual values: [[ -100  -510     1   100 -1000    -2    29    67]] [[0 0 1 1 0 0 1 1]]
+
+
+200 epochs
+learning_rate = 0.000003
+gives inverted predictions, i.e. 1s are small 0s are large.
+predictions: [[ 50  -1  10 -10 -15 -20  20  17]] [0.31042779 0.73989957 0.63055005 0.8158694  0.83351801 0.81881635
+ 0.5198817  0.55380864]
+actual values: [[ 50  -1  10 -10 -15 -20  20  17]] [[1 0 1 0 0 0 1 1]]
+
+# Training parameters
+epochs = 200
+learning_rate = 0.000003
+network = [dense_layer(1,6), relu_layer(), dense_layer(6,6), relu_layer() , dense_layer(6,6),relu_layer() , dense_layer(6,1), sigmoid_layer()]
+good separation of the training data:
+predictions: [[ 50  -1  10 -10 -15 -20  20  17]] [0.82919421 0.10419984 0.33355826 0.04747778 0.03463164 0.03816906
+ 0.37441053 0.36967842]
+actual values: [[ 50  -1  10 -10 -15 -20  20  17]] [[1 0 1 0 0 0 1 1]]
+gives better results for test data than the smaller network, but still not perfect:
+ Predicted Output: [array([[0.3608378]]), array([[0.05702957]]), array([[0.1417472]]), array([[0.97411842]]), array([[0.13153627]]), array([[0.09307061]]), array([[0.52615792]]), array([[0.90689277]])]
+predictions: [[ -100  -510     1   100 -1000    -2    29    67]] [0.3608378  0.05702957 0.1417472  0.97411842 0.13153627 0.09307061
+ 0.52615792 0.90689277]
+
 Updates 7th April 2022
 
 Updated RunNetwork to take a 2D feature vector and presumably higher dimensions. This involved some fiddling around regarding the difference in how numpy treats an array of shape (2, ) compared to (2,1), the former being a 1D array, the latter being 2D, despite them containing the same number of elements. This works for the test routine:
@@ -39,7 +137,7 @@ predictions: [ -100  -510     1   100 -1000    -2    29    67] [7.44702508e-02 1
  2.12523887e-12 7.19184794e-01 9.24869170e-01 9.89398199e-01]
 actual values: [ -100  -510     1   100 -1000    -2    29    67] [0 0 1 1 0 0 1 1]
 
-but reruning gives less impressive results: 
+but rerunning gives less impressive results: 
 predictions: [ 50  -1  10 -10 -15 -20  20  17] [0.04479568 0.13132367 0.10510298 0.15673229 0.17250318 0.17528651
  0.08538916 0.09092224]
 actual values: [ 50  -1  10 -10 -15 -20  20  17] [1 0 1 0 0 0 1 1]
