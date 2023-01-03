@@ -1,7 +1,7 @@
 # CodingANeuralNetFromScratch
  Coding a neural network from scratch using Numpy in Python.
  This is a toy project to help me understand better the inner workings of a feedforward network vis-a-vis back propagation, the challenges of structuring the code to achieve e.g. batch gradient descent compared to stochastic gradient descent. 
-The code was informed by Justin Johnsons Deep Learning for Vision lectures at Michigan, available on Youtube,
+The code was informed by Justin Johnson's Deep Learning for Vision lectures at Michigan, available on Youtube,
 and Andrej Karpathy/Justin Johnson/Fei-Fei Li's cs231n lectures at Stanford. 
 The initial incarnation of the code was based on the code presented by The Independent Code in the YouTube video "Neural Network from Scratch" but has
 had additions (sigmoid, relu, binary cross entropy) and restructurings of the implementation presented there, with anticipated future implementations going to introduce many more differences from that start point.
