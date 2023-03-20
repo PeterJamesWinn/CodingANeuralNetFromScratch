@@ -6,6 +6,37 @@ and Andrej Karpathy/Justin Johnson/Fei-Fei Li's cs231n lectures at Stanford.
 The initial incarnation of the code was based on the code presented by The Independent Code in the YouTube video "Neural Network from Scratch" but has
 had additions (sigmoid, relu, binary cross entropy) and restructurings of the implementation presented there, with anticipated future implementations going to introduce many more differences from that start point.
 
+Upadate 20th March 2023
+Tidying code a little to make more easily read. 
+Implementing better initialisation of weights and biases to see effect on 
+learning - this implementation is fairly rigid, hard coding division by 
+square root on number of input layers, and setting gains for weights
+in layer preceding different non-linearity types. 
+Implemented a batch update to the network, although not vectorised.
+E.g. 
+TestingReluAndDenseLayerNetwork_MSE.py 
+runs better: 
+DesignMatrix, TrainingValues = GenerateTrainingData(1,10) 
+epochs = 4000
+learning_rate = 0.0002
+# define the error function
+error_function = mse
+error_grad = mse_gradient
+network = [dense_layer(1,6, "relu"), relu_layer(), dense_layer(6,6, "relu"), \
+          relu_layer() , dense_layer(6,6, "relu"), relu_layer()\
+             , dense_layer(6,1)]
+gives almost perfect results:
+e.g. first try
+predictions: [[30 31 32 33 34 35 36 37 38 39 40]] [ 95.  98. 101. 104. 107. 110. 113. 116. 119. 122. 125.]
+actual values: [[30 31 32 33 34 35 36 37 38 39 40]] [[ 95.  98. 101. 104. 107. 110. 113. 116. 119. 122. 125.]]
+MSE:  2.1002632740604218e-26
+repeated training:
+predictions: [[30 31 32 33 34 35 36 37 38 39 40]] [ 94.99905066  97.99900471 100.99895876 103.99891281 106.99886686
+ 109.99882091 112.99877496 115.99872901 118.99868306 121.99863711
+ 124.99859116]
+actual values: [[30 31 32 33 34 35 36 37 38 39 40]] [[ 95.  98. 101. 104. 107. 110. 113. 116. 119. 122. 125.]]
+MSE:  1.5525022321920033e-05
+
 Updates 13th April 2022
 Created simple functions to generate a data set with 3D feature vector.
 Tested network regression problem with 3D input feature vector successfully (TestingReluAndDenseLayerNetwork_MSE_3DFeatureVectors.py). 
@@ -118,7 +149,7 @@ Also need a good tidy up of everything!
 
 Updates 5th April 2022.
 
-Bug found in the Dense layer. The gradient of the loss with respect to the layer input was being updated after the weights of the layer were updated (probably influenced by this being what The Independent Code YouTube video does). Since the upstream gradient has alread weights already  have been   used to update the weights, using the updated weights to multiply the upstream gradient will lead to approximately the upstream gradient squared being the multiplying factor, if the upstream gradient is very much greater than the weights and the activations arriving from the previous layer. In short this incorrect coding would undoubtly have contributed to exploding gradients during backpropagation. 
+Bug found in the Dense layer. The gradient of the loss with respect to the layer input was being updated after the weights of the layer were updated (probably influenced by this being what The Independent Code YouTube video does). Since the upstream gradient has weights already  have been   used to update the weights, using the updated weights to multiply the upstream gradient will lead to approximately the upstream gradient squared being the multiplying factor, if the upstream gradient is very much greater than the weights and the activations arriving from the previous layer. In short this incorrect coding would undoubtly have contributed to exploding gradients during backpropagation. 
 
 A new Binary Cross entropy and associated gradient has been coded with values clipped to avoid log0 and division by 0 issues. 
 
@@ -193,7 +224,7 @@ This is probably to be expected with a sigmoid bottle neck for this sort of fitt
 
  3. The RunNetwork() function needs refactoring to allow batch processing as well as stochastic gradient descent. 
 
- 4. Batchnormalisation is needed - using the sigmoid function doesn't seem to work well at the moment and I haven't yet found a problem with the coding of the sigmoid, so am considering that batchnormalisation might be all that is needed. 
+ 4. Batchnormalisation is needed - using the sigmoid function doesn't seem to work well at the moment and I haven't yet found a problem with the coding of the sigmoid, so am considering that batch normalisation might be all that is needed. 
 
  5. It would be good to try import jax as np, to see if the numpy functions can be directly replaced with their Jax equivalents, and what execution speed up this might give. 
 

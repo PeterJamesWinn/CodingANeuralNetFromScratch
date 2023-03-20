@@ -14,18 +14,17 @@ network = [dense_layer(1,6),  dense_layer(6,1)]
 #  x = x/np.max(abs(X))  # normalise data
 #  print("normalised x: ", x)
 print(X,Y)
-epochs = 200
-learning_rate = 0.01
+epochs = 500
+learning_rate = 0.001
 # define the error function
 error_function=mse  
 error_grad=mse_gradient
 RunNetwork(epochs, X, Y, learning_rate, error_function, error_grad, network)
+print("finished training")
 
-#DesignMatrix,TestingValues= np.matrix([-10001,-510, 1, 10000, -100000, -2000000,  2, 7]), np.matrix([0, 0, 1, 1, 0, 0,  1, 1])
-#for x in DesignMatrix:
-#  x = x/np.max(abs(DesignMatrix))  # normalise data
-#  print("normalised x: ", x)
-DesignMatrix,TestingValues= GenerateTrainingData(30,41)
-Predicted_Values=PredictWithNetwork(X, network)
+DesignMatrix,TestingValues = GenerateTrainingData(30,41)
+X=np.transpose(DesignMatrix)  # make column vector inputs
+Y=np.transpose(TrainingValues)
+Predicted_Values = PredictWithNetwork(X, network)
 print("predictions:", DesignMatrix, Predicted_Values)
 print("actual values:", DesignMatrix,TestingValues )
