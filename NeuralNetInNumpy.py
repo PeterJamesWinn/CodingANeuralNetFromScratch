@@ -211,7 +211,8 @@ class sigmoid_layer():
     '''learning rate not needed but is passed because parameter update 
     is embedded in backward pass of other layers.
     Indicates the need to refactor the code!'''
-    local_gradient = (1 - self.sigmoid)/self.sigmoid
+    local_gradient = sigmoid_gradient_sig_arg(self.sigmoid)
+    #local_gradient = (1 - self.sigmoid)/self.sigmoid
     #print("self.sigmoid in backward_pass. upstream gradient: \n {} \n \
     # local_gradient:\n {}".format(upstream_gradient, local_gradient))
     #elementwise multiply
@@ -230,6 +231,17 @@ def sigmoid(x):
     # The numpy "where" command is a 
     # succint way to code this. 
     return np.where(x < 0, np.exp(x)/(1 + np.exp(x)), 1/(1 + np.exp(-x)))
+
+def sigmoid_gradient(x):
+  ''' sigmoid_gradient(x) returns (1 - sigmoid(x))* sigmoid(x)'''
+  return (1 - sigmoid(x))* sigmoid(x)
+
+def sigmoid_gradient_sig_arg(sigmoid_output):
+  '''
+  Takes sigmoid_ouput = sigmoid(x) as input;
+  returns (1 - sigmoid_ouput) * sigmoid_ouput
+  '''
+  return (1 - sigmoid_output) * sigmoid_output
 
 # loss functions aka error functions:
 def mse(y, y_hat, number_of_training_examples): 
@@ -368,55 +380,6 @@ def RunNetwork_BatchOptimisation(epochs, X, Y, learning_rate, error_function,\
       for layer in reversed(network):
         grad = layer.backward_pass(grad, learning_rate) 
       # 2. no next batch, on this pass. 
-  return
-
-def Old_RunNetwork_BatchOptimisation(epochs, X, Y, learning_rate, error_function,\
-                                 error_grad,network, batch_size):
-  #This currently is a sketch - a copy and paste of RunNetwork 
-  # with minor modification. This is a non-vectorised version. 
-  # back propagating average gradient per batch_size.
-  # so iterate of batch_size number of entries, calculating grad,
-  # before going to backprop.
-  for epoch in range(epochs):
-    #print("epoch", epoch)
-    loss = 0
-    grad = 0
-    counter = 0
-    for pointer_position in range(0,len(Y)):
-      x = np.transpose(np.copy(X[pointer_position:pointer_position+1]))
-      y = np.copy(Y[pointer_position:pointer_position+1])
-      if counter < batch_size:
-        print("next input, x = ", x, "counter", counter)
-        next_input = x      
-        #print("next input: ", next_input)
-        for layer in network:  
-          next_input = layer.forward_pass(next_input) 
-          #the variable next_input containts at this point y_hat, the predicted value.
-          #print("next input: ", next_input)
-        #print("just about to calculate loss", X,Y)
-        loss += error_function(y, next_input, 1)  
-        grad += error_grad(y, next_input, 1) 
-        counter += 1
-      else: 
-        # 1. backprop. with previous gradient  
-        print("counter:", counter)
-        grad = grad/counter
-        for layer in reversed(network):
-          # weights updated on a per data pair basis, i.e. stochastic gradient descent.
-          grad = layer.backward_pass(grad, learning_rate) 
-        # 2. reset for next batch.
-        loss = 0
-        grad = 0
-        counter = 0 
-        # 3. calculate for last point read, which was read
-        # prior to determining last point
-        print("next input, x = ", x, "counter", counter)
-        next_input = x      
-        for layer in network:  
-          next_input = layer.forward_pass(next_input) 
-        loss += error_function(y, next_input, 1)  
-        grad += error_grad(y, next_input, 1) 
-        counter += 1
   return
 
 def PredictWithNetwork(X, network):
