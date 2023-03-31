@@ -1,4 +1,3 @@
-
 import numpy as np
 from NeuralNetInNumpy import *
 
@@ -25,14 +24,14 @@ def binary_cross_entropy_gradient2(y, y_hat, number_of_training_examples):
 """
 
 
-
-
-
 # 0. effect of adding clipping - removes infinities.
 # 1. training/test data
 # 2. Example output from binary_cross_entropy and binary_cross_entropy_gradient
 # 3. testing in vector and iterative modes
 
+# This was good enough for an initial check. Would be good to convert
+# this to a proper unit test with assert statements.
+ 
 
 y1 = [1,1,1,1]  # must necessarily be 1 or 0 for binary cross entropy known categories
 y_hat1 = [1,1,1,1]
